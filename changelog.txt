@@ -1,4 +1,11 @@
 Changelog:
+1.4:
+Implemented full server build function
+Implemented poweroff function with failsafe for laptop mode
+Fixed help part
+Reworked tgerr function, as well as servercmd function
+Added check before starting the party, to check whether CI should use servercmd or not
+
 1.3:
 Implemented partial server build function
 
