@@ -1,0 +1,17 @@
+Changelog:
+1.2.2:
+Fixed TWRP building process
+
+1.2.1:
+Added androiver parameter + syncsauce function
+
+1.2:
+Added takelogs function + ability to upload logs
+
+1.1:
+Added nosync and clean function
+Reworked part of the code
+
+1.0:
+Initial release
+

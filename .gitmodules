@@ -1,0 +1,6 @@
+[submodule "tgram"]
+	path = tgram
+	url = https://github.com/fabianonline/telegram.sh
+[submodule "tg"]
+	path = tg
+	url = https://github.com/fabianonline/telegram.sh
