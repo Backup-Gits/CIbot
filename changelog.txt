@@ -1,4 +1,7 @@
 Changelog:
+1.3:
+Implemented partial server build function
+
 1.2.2:
 Fixed TWRP building process
 
