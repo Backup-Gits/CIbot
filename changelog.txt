@@ -1,4 +1,9 @@
 Changelog:
+1.5:
+Reworked part of takelogs function
+Removed --force option from poweroff
+Edited error message
+
 1.4:
 Implemented full server build function
 Implemented poweroff function with failsafe for laptop mode

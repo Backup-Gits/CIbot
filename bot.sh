@@ -24,7 +24,7 @@ tgerr () {
 	  $TELEGRAM -t $TELEGRAM_TOKEN -c $TELEGRAM_CHAT "$1"
 	fi
 	if [ "$POWEROFF" == "true" ]; then
-		poweroff --force
+		poweroff
 	fi
     exit
 }
@@ -73,12 +73,12 @@ elif [ "$1" == "" ]; then
   echo "Please, provide an option, or type help."
   exit
 elif [ "$1" == "help" ]; then
-  echo "Giovix92 CI Bot v1.4"
+  echo "Giovix92 CI Bot v1.5"
   echo "Command usage: bot.sh device romtype [nosync] [clean] [takelogs] [server] [poweroff]"
   echo "Goodbye!"
   exit
 elif [ "$1" == "changelog" ]; then
-  echo "Giovix92 CI Bot 1.4"
+  echo "Giovix92 CI Bot 1.5"
   cat ./changelog.txt
   echo "Goodbye!"
   exit
@@ -159,7 +159,11 @@ jobs=$(nproc --all)
 # FINAL VAR EXPORT
 export POWEROFF messagefive date starttime jobs
 
-tgsay "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive"
+tgsay "Giovix92 CI Bot V1.5 started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE" 
+if [ "$TAKELOGS" == "true" ]; then
+	tgsay "Verbose option provided!" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive"
+fi
+
 if [ "$SERVER" == "true" ]; then
   if [ "$2" == "revenge10" ]; then
     WORKINGDIR="ros_10"
@@ -210,11 +214,11 @@ if [ "$SERVER" == "false" ]; then
   fi
 
   # LUNCH PART
-  lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" 2>&1 | tee "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! Check log." "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+  lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" 2>&1 | tee "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   if [ "$TYPE" == "ROM" ]; then
-    brunch $DEVICE -j$jobs 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! Check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+    brunch $DEVICE -j$jobs 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   else
-    lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! Check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+    lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   fi
   tgsay "$BUILDTYPE $ANDROIDVER build finished successfully!"
   exit
@@ -238,15 +242,15 @@ elif [ "$SERVER" == "true" ]; then
   fi
 
   # LUNCH PART
-  servercmd "lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)"" 2>&1 | tee "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! Check log." "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+  servercmd "lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)"" 2>&1 | tee "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   if [ "$TYPE" == "ROM" ]; then
-    servercmd "brunch $DEVICE -j$jobs 2>&1" | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! Check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+    servercmd "brunch $DEVICE -j$jobs 2>&1" | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   else
-    servercmd "lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage" 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! Check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+    servercmd "lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage" 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   fi
   tgsay "$BUILDTYPE $ANDROIDVER build finished successfully!"
   if [ "$POWEROFF" == "true" ]; then
-		poweroff --force
+		poweroff
 	fi
   exit
 fi
