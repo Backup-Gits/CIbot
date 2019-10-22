@@ -1,4 +1,12 @@
 Changelog:
+1.6:
+Added checkserverlog function
+Reworked & recoded servercmd function
+Added noccache var
+Reworked another bit of code + cleanup
+Added failsafe for poweroff function when in server mode
+Added version var
+
 1.5:
 Reworked part of takelogs function
 Removed --force option from poweroff
