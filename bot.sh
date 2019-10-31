@@ -6,7 +6,7 @@ TELEGRAM="/home/giovix92/CI/tg/telegram"
 IP=$SERVER_IP
 USERNAME=$SERVER_USERNAME
 PASSWORD=$SERVER_PASSWORD
-VERSION="1.7"
+VERSION="2.0"
 
 # FUNCTIONS
 tgsay() {
@@ -40,11 +40,11 @@ syncsauce() {
 
 syncall() {
   repo sync -c -f --force-sync --no-tags --no-clone-bundle -j$(nproc --all) --optimized-fetch --prune || tgsay "ERROR: Syncing repo dir terminated prematurely."
-  cd device/xiaomi/$1/
+  cd device/$VENDOR/$DEVICE/
   git pull
   cd $WORKINGDIR
-  if [ $COMMONDIR ]; then
-    cd device/xiaomi/$COMMONDIR/
+  if [ -v "$COMMONDIR" ]; then
+    cd device/$VENDOR/$COMMONDIR/
     git pull
   fi
 }
@@ -72,106 +72,108 @@ kernelused() {
 }
 
 # VARIABLES
-if [ "$1" == "tissot" ]; then
-  DEVICE="tissot"
-  COMMONDIR="msm8953-common"
-  KERNELDIR="msm8953"
-  VENDOR="xiaomi"
-  ARCH="arm64"
-elif [ "$1" == "lavender" ]; then
-  DEVICE="lavender"
-  VENDOR="xiaomi"
-  COMMONDIR="none"
-  KERNELDIR="lavender"
-  ARCH="arm64"
-elif [ "$1" == "" ]; then
+if [ "$1" == "" ]; then
+  echo "Giovix92 CI Bot v$(echo $VERSION)"
   echo "Please, provide an option, or type help."
   exit
 elif [ "$1" == "help" ]; then
-  echo "Giovix92 CI Bot $(echo VERSION)"
+  echo "Giovix92 CI Bot v$(echo $VERSION)"
   echo "Command usage: bot.sh device romtype [nosync] [clean] [takelogs] [server] [poweroff] [noccache]"
   echo "Goodbye!"
   exit
 elif [ "$1" == "changelog" ]; then
-  echo "Giovix92 CI Bot $(echo $VERSION)"
+  echo "Giovix92 CI Bot v$(echo $VERSION)"
   cat ./changelog.txt
   echo "Goodbye!"
   exit
 fi
-export DEVICE COMMONDIR KERNELDIR ARCH 
-if [ "$2" == "twrp" ]; then
-  WORKINGDIR="/media/giovix92/HDD/twrp"
-  BUILDTYPE="TWRP"
-  VARIANT="eng"
-  WORKNAME="omni"
-  ANDROIDVER="3.3"
-  TYPE="RECOVERY"
-elif [ "$2" == "revenge10" ]; then
-  WORKINGDIR="/media/giovix92/HDD/RevengeOS10"
-  BUILDTYPE="RevengeOS"
-  VARIANT="userdebug"
-  WORKNAME="revengeos"
-  ANDROIDVER="Q"
-  TYPE=ROM
-elif [ "$2" == "revenge9" ]; then
-  WORKINGDIR="/media/giovix92/HDD/RevengeOS"
-  BUILDTYPE="RevengeOS"
-  VARIANT="userdebug"
-  WORKNAME="revengeos"
-  ANDROIDVER="Q"
-  TYPE=ROM
-fi
-if [ "$3" == "nosync" ] || [ "$4" == "nosync" ] || [ "$5" == "nosync" ] || [ "$6" == "nosync" ] || [ "$7" == "nosync" ] || [ "$8" == "nosync" ]; then
-  NOSYNC=true
-  message="Nosync option added! Skipping syncing."
-else
-  NOSYNC=false
-  message="No "nosync" option provided! Syncing."
-fi
-if [ "$3" == "clean" ] || [ "$4" == "clean" ] || [ "$5" == "clean" ] || [ "$6" == "clean" ] || [ "$7" == "clean" ] || [ "$8" == "clean" ]; then
-  CLEAN=true
-  messagetwo="Clean option provided! Making a clean build."
-else
-  CLEAN=false
-  messagetwo="No "clean" option provided! Making a dirty build."
-fi
-if [ "$3" == "takelogs" ] || [ "$4" == "takelogs" ] || [ "$5" == "takelogs" ] || [ "$6" == "takelogs" ] || [ "$7" == "takelogs" ] || [ "$8" == "takelogs" ]; then
-  TAKELOGS=true
-  messagethree="Takelogs option provided! Running in logging mode."
-else
-  TAKELOGS=false
-  messagethree="No "takelogs" option provided! Running in silent mode."
-fi
-if [ "$3" == "server" ] || [ "$4" == "server" ] || [ "$5" == "server" ] || [ "$6" == "server" ] || [ "$7" == "server" ] || [ "$8" == "server" ]; then
-  SERVER=true
-  messagefour="Server option provided! Using server as build machine."
-else
-  SERVER=false
-  messagefour="No "server" option provided. Using laptop as build machine."
-fi
-if [ "$3" == "noccache" ] || [ "$4" == "noccache" ] || [ "$5" == "noccache" ] || [ "$6" == "noccache" ] || [ "$7" == "noccache" ] || [ "$8" == "noccache" ]; then
-  NOCCACHE=true
-  messageseex="Noccache option provided! Excluding ccache for this build."
-else
-  NOCCACHE=false
-  messageseex="No "noccache" option provided. Speeding up!"
-fi
-
-# INITIAL VAR EXPORT
-export WORKINGDIR BUILDTYPE TYPE CLEAN NOSYNC TAKELOGS ANDROIDVER VARIANT SERVER NOCCACHE
-export message messagetwo messagethree messagefour messageseex
-
-if [ "$3" == "poweroff" ] || [ "$4" == "poweroff" ] || [ "$5" == "poweroff" ] || [ "$6" == "poweroff" ] || [ "$7" == "poweroff" ] || [ "$8" == "poweroff" ]; then
-  if [ "$SERVER" == "true" ]; then
-  	POWEROFF=false
-  	messagefive="WARNING: Poweroff mode not available when in server build mode! Ignoring."
-  else
-    POWEROFF=true
-    messagefive="Poweroff option provided! Turning off laptop after work!"
+for var in "$@"
+do
+  if [ -z "$DEVICE" ]; then
+    if [ "$var" == "tissot" ]; then
+      DEVICE="tissot"
+      COMMONDIR="msm8953-common"
+      KERNELDIR="msm8953"
+      VENDOR="xiaomi"
+      ARCH="arm64"
+    fi
   fi
-else
+  if [ -z "$DEVICE" ]; then
+    if [ "$var" == "lavender" ]; then
+      DEVICE="lavender"
+      VENDOR="xiaomi"
+      COMMONDIR=
+      KERNELDIR="lavender"
+      ARCH="arm64"
+    fi
+  fi
+  if [ -z "$TYPE" ]; then
+    if [ "$var" == "twrp" ]; then
+      WORKINGDIR="/media/giovix92/HDD/twrp"
+      BUILDTYPE="TWRP"
+      VARIANT="eng"
+      WORKNAME="omni"
+      ANDROIDVER="3.3"
+      TYPE="RECOVERY"
+    fi
+  fi
+  if [ -z "$TYPE" ]; then
+    if [ "$var" == "revenge10" ]; then
+      WORKINGDIR="/media/giovix92/HDD/RevengeOS10"
+      BUILDTYPE="RevengeOS"
+      VARIANT="userdebug"
+      WORKNAME="revengeos"
+      ANDROIDVER="Q"
+      TYPE=ROM
+    fi
+  fi
+  if [ -z "$TYPE" ]; then
+    if [ "$var" == "revenge9" ]; then
+      WORKINGDIR="/media/giovix92/HDD/RevengeOS"
+      BUILDTYPE="RevengeOS"
+      VARIANT="userdebug"
+      WORKNAME="revengeos"
+      ANDROIDVER="Pie"
+      TYPE=ROM
+    fi
+  fi
+  if [ "$var" == "nosync" ]; then
+      NOSYNC=true
+      message="Nosync option added! Skipping syncing."
+  fi
+  if [ "$var" == "clean" ]; then
+    CLEAN=true
+    messagetwo="Clean option provided! Making a clean build."
+  fi
+  if [ "$var" == "takelogs" ]; then
+    TAKELOGS=true
+    messagethree="Takelogs option provided! Running in logging mode."
+  fi
+  if [ "$var" == "server" ]; then
+    SERVER=true
+    messagefour="Server option provided! Using server as build machine."
+  fi
+  if [ "$var" == "noccache" ]; then
+    NOCCACHE=true
+    messageseex="Noccache option provided! Excluding ccache for this build."
+  fi
+  if [ "$var" == "poweroff" ]; then
+    if [ "$SERVER" == "true" ]; then
+      POWEROFF=false
+      messagefive="WARNING: Poweroff mode not available when in server build mode! Ignoring."
+    else
+      POWEROFF=true
+      messagefive="Poweroff option provided! Turning off laptop after work!"
+    fi
+  fi
+done
+# Recheck for poweroff
+if [ "$SERVER" == "true" ]; then
   POWEROFF=false
-  messagefive="No "poweroff" option provided. Laptop will stay on."
+  messagefive="WARNING: Poweroff mode not available when in server build mode! Ignoring."
+else
+  POWEROFF=true
+  messagefive="Poweroff option provided! Turning off laptop after work!"
 fi
 
 date=$(date +%Y%m%d)
@@ -194,13 +196,26 @@ elif [ "$SERVER" == "false" ]; then
   cd $WORKINGDIR
 fi
 
-# FINAL VAR EXPORT
-export POWEROFF messagefive date starttime jobs KERNELVER WORKINGDIR
+# VAR EXPORT
+export DEVICE COMMONDIR KERNELDIR ARCH
+export WORKINGDIR BUILDTYPE TYPE CLEAN NOSYNC TAKELOGS ANDROIDVER VARIANT SERVER NOCCACHE POWEROFF
+export message messagetwo messagethree messagefour messagefive messageseex
+export date starttime jobs
 
-tgsay "Giovix92 CI Bot $(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE"
+# SANITY CHECK
+if [ "$WORKINGDIR" == "" ] || [ "$BUILDTYPE" == "" ] || [ "$WORKNAME" == "" ] || [ "$VARIANT" == "" ] || [ "$DEVICE" == "" ]; then
+  echoo "VARS MISSING. CHECK VARS." "WORKINGDIR: $WORKINGDIR" "BUILDTYPE: $BUILDTYPE" "VARIANT: $VARIANT" "DEVICE: $DEVICE" "WORKNAME: $WORKNAME"
+  exit
+else
+  echo "Vars are set, continuing"
+fi
+
+tgsay "Giovix92 CI Bot v$(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE"
 if [ "$TAKELOGS" == "true" ]; then
 	tgsay "Takelogs option provided!" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive" "$messageseex"
 fi
+
+exit # DEBUG
 
 if [ "$NOSYNC" == "false" ]; then
   syncsauce
@@ -213,14 +228,6 @@ fi
 
 if [ "$NOCCACHE" == "false" ]; then
 	ccachevar="export USE_CCACHE="1" CCACHE_COMPRESS="1" CCACHE_MAX_SIZE="35G""
-fi
-
-# SANITY CHECK
-if [ "$WORKINGDIR" == "" ] || [ "$BUILDTYPE" == "" ] || [ "$WORKNAME" == "" ] || [ "$VARIANT" == "" ] || [ "$DEVICE" == "" ]; then
-  echoo "VARS MISSING. CHECK VARS." "WORKINGDIR: $WORKINGDIR" "BUILDTYPE: $BUILDTYPE" "VARIANT: $VARIANT" "DEVICE: $DEVICE" "WORKNAME: $WORKNAME"
-  exit
-else
-  echo "Vars are set, continuing"
 fi
 
 ### START THE PARTY, NO SERVER ###

@@ -1,4 +1,9 @@
 Changelog:
+2.0:
+Bump to 2.0
+Reworked ALOT of code
+Big cleanup
+
 1.7:
 Reworked checkserverlog function
 Reworked a bit of code
