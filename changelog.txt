@@ -1,4 +1,9 @@
 Changelog:
+1.7:
+Reworked checkserverlog function
+Reworked a bit of code
+Fixed version error
+
 1.6:
 Added checkserverlog function
 Reworked & recoded servercmd function

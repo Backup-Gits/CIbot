@@ -6,7 +6,7 @@ TELEGRAM="/home/giovix92/CI/tg/telegram"
 IP=$SERVER_IP
 USERNAME=$SERVER_USERNAME
 PASSWORD=$SERVER_PASSWORD
-VERSION="1.6"
+VERSION="1.7"
 
 # FUNCTIONS
 tgsay() {
@@ -64,24 +64,26 @@ servercmd() {
 }
 
 checkserverlog() {
-	if [ grep -Fiq "#### failed" "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" ]; then
-		ERROR=true
-	else
-		ERROR=false
-	fi
+	grep -Fiq "failed" "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+}
+
+kernelused() {
+	cat $WORKINGDIR/kernel/$VENDOR/$KERNELDIR/arch/arm64/configs/*$(echo $DEVICE)* | grep -i "CONFIG_LOCALVERSION"
 }
 
 # VARIABLES
 if [ "$1" == "tissot" ]; then
-  DEVICE=tissot
-  COMMONDIR=msm8953-common
-  KERNELDIR=msm8953
-  ARCH=arm64
+  DEVICE="tissot"
+  COMMONDIR="msm8953-common"
+  KERNELDIR="msm8953"
+  VENDOR="xiaomi"
+  ARCH="arm64"
 elif [ "$1" == "lavender" ]; then
-  DEVICE=lavender
-  COMMONDIR=none
-  KERNELDIR=lavender
-  ARCH=arm64
+  DEVICE="lavender"
+  VENDOR="xiaomi"
+  COMMONDIR="none"
+  KERNELDIR="lavender"
+  ARCH="arm64"
 elif [ "$1" == "" ]; then
   echo "Please, provide an option, or type help."
   exit
@@ -91,7 +93,7 @@ elif [ "$1" == "help" ]; then
   echo "Goodbye!"
   exit
 elif [ "$1" == "changelog" ]; then
-  echo "Giovix92 CI Bot $(echo VERSION)"
+  echo "Giovix92 CI Bot $(echo $VERSION)"
   cat ./changelog.txt
   echo "Goodbye!"
   exit
@@ -176,19 +178,13 @@ date=$(date +%Y%m%d)
 starttime=$(date +%H%M)
 jobs=$(nproc --all)
 
-# FINAL VAR EXPORT
-export POWEROFF messagefive date starttime jobs
-
-tgsay "Giovix92 CI Bot $(echo VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE" 
-if [ "$TAKELOGS" == "true" ]; then
-	tgsay "Verbose option provided!" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive" "$messageseex"
-fi
-
 if [ "$SERVER" == "true" ]; then
   if [ "$2" == "revenge10" ]; then
-    WORKINGDIR="ros_10"
+    WORKINGDIR="/home/revenger/ros_10"
   elif [ "$2" == "revenge9" ]; then
     WORKINGDIR=
+    echo "ROS9 building on server is currently not possible. Aborting."
+    exit
   elif [ "$2" == "twrp" ]; then
     WORKINGDIR=
     echo "TWRP building on server is currently not possible. Aborting."
@@ -196,6 +192,14 @@ if [ "$SERVER" == "true" ]; then
   fi
 elif [ "$SERVER" == "false" ]; then
   cd $WORKINGDIR
+fi
+
+# FINAL VAR EXPORT
+export POWEROFF messagefive date starttime jobs KERNELVER WORKINGDIR
+
+tgsay "Giovix92 CI Bot $(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE"
+if [ "$TAKELOGS" == "true" ]; then
+	tgsay "Takelogs option provided!" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive" "$messageseex"
 fi
 
 if [ "$NOSYNC" == "false" ]; then
@@ -253,8 +257,7 @@ if [ "$SERVER" == "false" ]; then
 ### START THE PARTY, USING SERVER ###
 elif [ "$SERVER" == "true" ]; then
   servercmd "$ccachevar && cd $WORKINGDIR && make clean && . build/envsetup.sh && lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && brunch $(echo $DEVICE)" 2>&1 | tee "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-  checkserverlog
-  if [  "$ERROR" == "true" ]; then
+  if checkserverlog; then
     tgerr "ERROR: $BUILDTYPE $ANDROIDVER server build failed! @Giovix92 sar check log." "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   else
     tgsay "$BUILDTYPE $ANDROIDVER server build finished successfully!"
