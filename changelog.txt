@@ -1,4 +1,9 @@
-Changelog:
+2.1:
+Shrunk alot of code
+Added kernelver + output on telegram
+Fixed syncall function
+Set variables to false due to case func
+
 2.0:
 Bump to 2.0
 Reworked ALOT of code

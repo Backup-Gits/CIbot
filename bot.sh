@@ -13,7 +13,15 @@ TELEGRAM="/home/giovix92/CI/tg/telegram"
 IP=$SERVER_IP
 USERNAME=$SERVER_USERNAME
 PASSWORD=$SERVER_PASSWORD
-VERSION="2.0"
+VERSION="2.1"
+
+# SET VARIABLES TO FALSE
+NOSYNC=false
+CLEAN=false
+TAKELOGS=false
+SERVER=false
+NOCCACHE=false
+POWEROFF=false
 
 # FUNCTIONS
 tgsay() {
@@ -75,126 +83,119 @@ checkserverlog() {
 }
 
 kernelused() {
-	cat $WORKINGDIR/kernel/$VENDOR/$KERNELDIR/arch/arm64/configs/*$(echo $DEVICE)* | grep -i "CONFIG_LOCALVERSION"
+  kernelusedcmd=". $WORKINGDIR/kernel/$VENDOR/$KERNELDIR/kernelver.sh"
+  if [ "$SERVER" == "false" ]; then
+	  cd kernel/$VENDOR/$KERNELDIR/arch/arm64/configs/
+    export $(grep "CONFIG_LOCALVERSION=" *-$DEVICE_defconfig | cut -d\   -f2)
+    KERNELTYPE=$(echo $CONFIG_LOCALVERSION)
+  fi
 }
 
 # VARIABLES
-if [ "$1" == "" ]; then
-  echo "Giovix92 CI Bot v$(echo $VERSION)"
-  echo "Please, provide an option, or type help."
-  exit
-elif [ "$1" == "help" ]; then
+for var in "$@"
+do
+case $var in
+  tissot)
+  DEVICE="tissot"
+  COMMONDIR="msm8953-common"
+  KERNELDIR="msm8953"
+  VENDOR="xiaomi"
+  ARCH="arm64"
+  var1="tissot"
+  ;;
+  lavender)
+  DEVICE="lavender"
+  VENDOR="xiaomi"
+  COMMONDIR=
+  KERNELDIR="lavender"
+  ARCH="arm64"
+  var1="lavender"
+  ;;
+  twrp)
+  WORKINGDIR="/media/giovix92/HDD/twrp"
+  BUILDTYPE="TWRP"
+  VARIANT="eng"
+  WORKNAME="omni"
+  ANDROIDVER="3.3"
+  TYPE="RECOVERY"
+  var2="twrp"
+  ;;
+  revenge10)
+  WORKINGDIR="/media/giovix92/HDD/RevengeOS10"
+  BUILDTYPE="RevengeOS"
+  VARIANT="userdebug"
+  WORKNAME="revengeos"
+  ANDROIDVER="Q"
+  TYPE="ROM"
+  var2="revenge10"
+  ;;
+  revenge9)
+  WORKINGDIR="/media/giovix92/HDD/RevengeOS"
+  BUILDTYPE="RevengeOS"
+  VARIANT="userdebug"
+  WORKNAME="revengeos"
+  ANDROIDVER="Pie"
+  TYPE="ROM"
+  var2="revenge9"
+  ;;
+  nosync)
+  NOSYNC=true
+  message="Nosync option added! Skipping syncing."
+  ;;
+  clean)
+  CLEAN=true
+  messagetwo="Clean option provided! Making a clean build."
+  ;;
+  server)
+  SERVER=true
+  messagefour="Server option provided! Using server as build machine."
+  ;;
+  noccache)
+  NOCCACHE=true
+  messageseex="Noccache option provided! Excluding ccache for this build."
+  ;;
+  poweroff)
+  POWEROFF=true
+  messagefive="Poweroff option provided! Turning off laptop after work!"
+  ;;
+  takelogs)
+  TAKELOGS=true
+  messagethree="Takelogs option provided! Running in logging mode."
+  ;;
+  help)
   echo "Giovix92 CI Bot v$(echo $VERSION)"
   echo "Command usage: bot.sh device romtype [nosync] [clean] [takelogs] [server] [poweroff] [noccache]"
   echo "Goodbye!"
   exit
-elif [ "$1" == "changelog" ]; then
+  ;;
+  changelog)
   echo "Giovix92 CI Bot v$(echo $VERSION)"
   cat ./changelog.txt
   echo "Goodbye!"
   exit
-fi
-for var in "$@"
-do
-  if [ -z "$DEVICE" ]; then
-    if [ "$var" == "tissot" ]; then
-      DEVICE="tissot"
-      COMMONDIR="msm8953-common"
-      KERNELDIR="msm8953"
-      VENDOR="xiaomi"
-      ARCH="arm64"
-    fi
-  fi
-  if [ -z "$DEVICE" ]; then
-    if [ "$var" == "lavender" ]; then
-      DEVICE="lavender"
-      VENDOR="xiaomi"
-      COMMONDIR=
-      KERNELDIR="lavender"
-      ARCH="arm64"
-    fi
-  fi
-  if [ -z "$TYPE" ]; then
-    if [ "$var" == "twrp" ]; then
-      WORKINGDIR="/media/giovix92/HDD/twrp"
-      BUILDTYPE="TWRP"
-      VARIANT="eng"
-      WORKNAME="omni"
-      ANDROIDVER="3.3"
-      TYPE="RECOVERY"
-    fi
-  fi
-  if [ -z "$TYPE" ]; then
-    if [ "$var" == "revenge10" ]; then
-      WORKINGDIR="/media/giovix92/HDD/RevengeOS10"
-      BUILDTYPE="RevengeOS"
-      VARIANT="userdebug"
-      WORKNAME="revengeos"
-      ANDROIDVER="Q"
-      TYPE=ROM
-    fi
-  fi
-  if [ -z "$TYPE" ]; then
-    if [ "$var" == "revenge9" ]; then
-      WORKINGDIR="/media/giovix92/HDD/RevengeOS"
-      BUILDTYPE="RevengeOS"
-      VARIANT="userdebug"
-      WORKNAME="revengeos"
-      ANDROIDVER="Pie"
-      TYPE=ROM
-    fi
-  fi
-  if [ "$var" == "nosync" ]; then
-      NOSYNC=true
-      message="Nosync option added! Skipping syncing."
-  fi
-  if [ "$var" == "clean" ]; then
-    CLEAN=true
-    messagetwo="Clean option provided! Making a clean build."
-  fi
-  if [ "$var" == "takelogs" ]; then
-    TAKELOGS=true
-    messagethree="Takelogs option provided! Running in logging mode."
-  fi
-  if [ "$var" == "server" ]; then
-    SERVER=true
-    messagefour="Server option provided! Using server as build machine."
-  fi
-  if [ "$var" == "noccache" ]; then
-    NOCCACHE=true
-    messageseex="Noccache option provided! Excluding ccache for this build."
-  fi
-  if [ "$var" == "poweroff" ]; then
-    if [ "$SERVER" == "true" ]; then
-      POWEROFF=false
-      messagefive="WARNING: Poweroff mode not available when in server build mode! Ignoring."
-    else
-      POWEROFF=true
-      messagefive="Poweroff option provided! Turning off laptop after work!"
-    fi
-  fi
+  ;;
+  ""|*)
+  echo "Giovix92 CI Bot v$(echo $VERSION)"
+  echo "Please, provide a valid option, or type help."
+  exit
+  ;;
+esac
 done
-# Recheck for poweroff
+
+# Recheck for POWEROFF
 if [ "$SERVER" == "true" ]; then
   POWEROFF=false
   messagefive="WARNING: Poweroff mode not available when in server build mode! Ignoring."
-else
-  POWEROFF=true
-  messagefive="Poweroff option provided! Turning off laptop after work!"
 fi
 
-date=$(date +%Y%m%d)
-starttime=$(date +%H%M)
-jobs=$(nproc --all)
-
 if [ "$SERVER" == "true" ]; then
-  if [ "$2" == "revenge10" ]; then
-    WORKINGDIR="/home/revenger/ros_10"
-  elif [ "$2" == "revenge9" ]; then
+  if [ "$var2" == "revenge10" ]; then
+    WORKINGDIR="ros_10"
+  elif [ "$var2" == "revenge9" ]; then
     WORKINGDIR=
     echo "ROS9 building on server is currently not possible. Aborting."
     exit
-  elif [ "$2" == "twrp" ]; then
+  elif [ "$var2" == "twrp" ]; then
     WORKINGDIR=
     echo "TWRP building on server is currently not possible. Aborting."
     exit
@@ -202,6 +203,10 @@ if [ "$SERVER" == "true" ]; then
 elif [ "$SERVER" == "false" ]; then
   cd $WORKINGDIR
 fi
+
+date=$(date +%Y%m%d)
+starttime=$(date +%H%M)
+jobs=$(nproc --all)
 
 # VAR EXPORT
 export DEVICE COMMONDIR KERNELDIR ARCH
@@ -217,15 +222,20 @@ else
   echo "Vars are set, continuing"
 fi
 
-tgsay "Giovix92 CI Bot v$(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE"
+# Kernel check path
+kernelused
+if [ "$SERVER" == "true" ]; then
+  KERNELTYPEN=$(servercmd "$kernelusedcmd")
+  KERNELTYPE=$KERNELTYPEN
+fi
+
+tgsay "Giovix92 CI Bot v$(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE" "Kernel: $KERNELTYPE"
 if [ "$TAKELOGS" == "true" ]; then
 	tgsay "Takelogs option provided!" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive" "$messageseex"
 fi
 
-exit # DEBUG
-
 if [ "$NOSYNC" == "false" ]; then
-  syncsauce
+  syncall
 fi
 
 if [ "$TYPE" == "RECOVERY" ]; then
@@ -234,7 +244,8 @@ if [ "$TYPE" == "RECOVERY" ]; then
 fi
 
 if [ "$NOCCACHE" == "false" ]; then
-	ccachevar="export USE_CCACHE="1" CCACHE_COMPRESS="1" CCACHE_MAX_SIZE="35G""
+	ccachevarserver="export USE_CCACHE="1" CCACHE_COMPRESS="1" CCACHE_MAX_SIZE="35G" &&"
+  ccachevar="export USE_CCACHE="1" CCACHE_COMPRESS="1" CCACHE_MAX_SIZE="35G""
 fi
 
 ### START THE PARTY, NO SERVER ###
@@ -270,7 +281,7 @@ if [ "$SERVER" == "false" ]; then
 
 ### START THE PARTY, USING SERVER ###
 elif [ "$SERVER" == "true" ]; then
-  servercmd "$ccachevar && cd $WORKINGDIR && make clean && . build/envsetup.sh && lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && brunch $(echo $DEVICE)" 2>&1 | tee "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+  servercmd "$ccachevarserver cd $WORKINGDIR && make clean && . build/envsetup.sh && lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && brunch $(echo $DEVICE)" 2>&1 | tee "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   if checkserverlog; then
     tgerr "ERROR: $BUILDTYPE $ANDROIDVER server build failed! @Giovix92 sar check log." "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   else
