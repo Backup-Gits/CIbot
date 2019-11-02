@@ -22,6 +22,8 @@ TAKELOGS=false
 SERVER=false
 NOCCACHE=false
 POWEROFF=false
+RETRYONFAIL=false
+errcount=0
 
 # FUNCTIONS
 tgsay() {
@@ -39,6 +41,7 @@ tgerr () {
 	elif [ "$TAKELOGS" == "false" ]; then
 	  $TELEGRAM -t $TELEGRAM_TOKEN -c $TELEGRAM_CHAT "$1"
 	fi
+  ((errcount++))
 	if [ "$POWEROFF" == "true" ]; then
 		if [ "$SERVER" == "true" ]; then
 			echo "Can't turn off server! Ignoring poweroff function."
@@ -46,7 +49,9 @@ tgerr () {
 			poweroff
 		fi
 	fi
+  if [ "$errcount" == "2" ] && [ "$RETRYONFAIL" == "true" ]; then
     exit
+  fi
 }
 
 syncsauce() {
@@ -79,7 +84,7 @@ servercmd() {
 }
 
 checkserverlog() {
-	grep -Fiq "failed" "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+	grep -Fiq "build completed" "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
 }
 
 kernelused() {
@@ -88,6 +93,49 @@ kernelused() {
 	  cd kernel/$VENDOR/$KERNELDIR/arch/arm64/configs/
     export $(grep "CONFIG_LOCALVERSION=" *-$DEVICE_defconfig | cut -d\   -f2)
     KERNELTYPE=$(echo $CONFIG_LOCALVERSION)
+  fi
+}
+
+localbuild() {
+  if [ "$NOCCACHE" == "false" ]; then
+  $ccachevar
+  fi
+  . build/envsetup.sh
+
+  # CHECK FOR LOGS
+  if [ -f "$PWD/log*" ]; then
+    rm log*
+  fi
+
+  # CHECK CLEAN VAR
+  if [ "$CLEAN" == true ]; then
+    make clean || tgsay "ERROR: Cleaning out/ terminated prematurely."
+    if [ "$TYPE" == "ROM" ]; then
+      make clobber || tgsay "ERROR: Cleaning out/ terminated prematurely."
+    fi
+    . build/envsetup.sh
+  fi
+
+  # LUNCH PART
+  lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" 2>&1 | tee "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+  if [ "$TYPE" == "ROM" ]; then
+    brunch $DEVICE -j$jobs 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || if [ "$errcount" == "1" ]; then tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Retrying for the last time." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; else tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Something is REALLY WRONG." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; fi
+  else
+    lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || || if [ "$errcount" == "1" ]; then tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Retrying for the last time." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; else tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Something is REALLY WRONG." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; fi
+  fi
+  tgsay "$BUILDTYPE $ANDROIDVER build finished successfully!"
+}
+
+serverbuild() {
+  servercmd "$ccachevarserver cd $WORKINGDIR && make clean && . build/envsetup.sh && lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && brunch $(echo $DEVICE)" 2>&1 | tee "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+  if checkserverlog; then
+    tgsay "$BUILDTYPE $ANDROIDVER server build finished successfully!"
+  else
+    if [ "$errcount" == "1" ]; then
+      tgerr "ERROR: $BUILDTYPE $ANDROIDVER server build failed! @Giovix92 sar check log. Retrying for the last time." "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+    elif [ "$errcount" == "2" ]; then
+      tgerr "ERROR: $BUILDTYPE $ANDROIDVER server build failed! @Giovix92 sar check log. Something is REALLY WRONG." "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+    fi
   fi
 }
 
@@ -162,6 +210,10 @@ case $var in
   TAKELOGS=true
   messagethree="Takelogs option provided! Running in logging mode."
   ;;
+  retryonfail)
+  RETRYONFAIL=true
+  messageseven="Retryonfail option provided! Retrying when failing."
+  ;;
   help)
   echo "Giovix92 CI Bot v$(echo $VERSION)"
   echo "Command usage: bot.sh device romtype [nosync] [clean] [takelogs] [server] [poweroff] [noccache]"
@@ -211,7 +263,7 @@ jobs=$(nproc --all)
 # VAR EXPORT
 export DEVICE COMMONDIR KERNELDIR ARCH
 export WORKINGDIR BUILDTYPE TYPE CLEAN NOSYNC TAKELOGS ANDROIDVER VARIANT SERVER NOCCACHE POWEROFF
-export message messagetwo messagethree messagefour messagefive messageseex
+export message messagetwo messagethree messagefour messagefive messageseex messageseven
 export date starttime jobs
 
 # SANITY CHECK
@@ -231,7 +283,7 @@ fi
 
 tgsay "Giovix92 CI Bot v$(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE" "Kernel: $KERNELTYPE"
 if [ "$TAKELOGS" == "true" ]; then
-	tgsay "Takelogs option provided!" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive" "$messageseex"
+	tgsay "Takelogs option provided!" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive" "$messageseex" "$messageseven"
 fi
 
 if [ "$NOSYNC" == "false" ]; then
@@ -248,44 +300,17 @@ if [ "$NOCCACHE" == "false" ]; then
   ccachevar="export USE_CCACHE="1" CCACHE_COMPRESS="1" CCACHE_MAX_SIZE="35G""
 fi
 
-### START THE PARTY, NO SERVER ###
 if [ "$SERVER" == "false" ]; then
-  if [ "$NOCCACHE" == "false" ]; then
-	$ccachevar
+  ### START THE PARTY, NO SERVER ###
+  localbuild
+  if [ "$errcount" == "1" ]; then
+    localbuild
   fi
-  . build/envsetup.sh
-
-  # CHECK FOR LOGS
-  if [ -f "log*.txt" ]; then
-    rm log*.txt
-  fi
-
-  # CHECK CLEAN VAR
-  if [ "$CLEAN" == true ]; then
-    make clean || tgsay "ERROR: Cleaning out/ terminated prematurely."
-    if [ "$TYPE" == "ROM" ]; then
-      make clobber || tgsay "ERROR: Cleaning out/ terminated prematurely."
-    fi
-    . build/envsetup.sh
-  fi
-
-  # LUNCH PART
-  lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" 2>&1 | tee "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-  if [ "$TYPE" == "ROM" ]; then
-    brunch $DEVICE -j$jobs 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-  else
-    lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed! @Giovix92 sar check log." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-  fi
-  tgsay "$BUILDTYPE $ANDROIDVER build finished successfully!"
-  exit
-
-### START THE PARTY, USING SERVER ###
-elif [ "$SERVER" == "true" ]; then
-  servercmd "$ccachevarserver cd $WORKINGDIR && make clean && . build/envsetup.sh && lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && brunch $(echo $DEVICE)" 2>&1 | tee "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-  if checkserverlog; then
-    tgerr "ERROR: $BUILDTYPE $ANDROIDVER server build failed! @Giovix92 sar check log." "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-  else
-    tgsay "$BUILDTYPE $ANDROIDVER server build finished successfully!"
+else
+  ### START THE PARTY, USING SERVER ###
+  serverbuild
+  if [ "$errcount" == "1" ]; then
+    serverbuild
   fi
 fi
 

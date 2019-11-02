@@ -1,3 +1,8 @@
+2.2:
+Added retryonfail function
+Fixed mismatch on tgerr
+Modified behaviour of checkserverlog func
+
 2.1:
 Shrunk alot of code
 Added kernelver + output on telegram
