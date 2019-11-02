@@ -121,7 +121,7 @@ localbuild() {
   if [ "$TYPE" == "ROM" ]; then
     brunch $DEVICE -j$jobs 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || if [ "$errcount" == "1" ]; then tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Retrying for the last time." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; else tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Something is REALLY WRONG." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; fi
   else
-    lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || || if [ "$errcount" == "1" ]; then tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Retrying for the last time." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; else tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Something is REALLY WRONG." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; fi
+    lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || if [ "$errcount" == "1" ]; then tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Retrying for the last time." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; else tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed! @Giovix92 sar check log. Something is REALLY WRONG." "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"; fi
   fi
   tgsay "$BUILDTYPE $ANDROIDVER build finished successfully!"
 }
