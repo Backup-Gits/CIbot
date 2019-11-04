@@ -13,16 +13,16 @@ TELEGRAM="/home/giovix92/CI/tg/telegram"
 IP=$SERVER_IP
 USERNAME=$SERVER_USERNAME
 PASSWORD=$SERVER_PASSWORD
-VERSION="2.1"
+VERSION="2.3"
 
 # SET VARIABLES TO FALSE
-NOSYNC=false
-CLEAN=false
-TAKELOGS=false
-SERVER=false
-NOCCACHE=false
-POWEROFF=false
-RETRYONFAIL=false
+NOSYNC="false"
+CLEAN="false"
+TAKELOGS="false"
+SERVER="false"
+NOCCACHE="false"
+POWEROFF="false"
+RETRYONFAIL="false"
 errcount=0
 
 # FUNCTIONS
@@ -90,7 +90,7 @@ checkserverlog() {
 kernelused() {
   kernelusedcmd=". $WORKINGDIR/kernel/$VENDOR/$KERNELDIR/kernelver.sh"
   if [ "$SERVER" == "false" ]; then
-	  cd kernel/$VENDOR/$KERNELDIR/arch/arm64/configs/
+	cd kernel/$VENDOR/$KERNELDIR/arch/arm64/configs/
     export $(grep "CONFIG_LOCALVERSION=" *-$DEVICE_defconfig | cut -d\   -f2)
     KERNELTYPE=$(echo $CONFIG_LOCALVERSION)
   fi
@@ -108,7 +108,7 @@ localbuild() {
   fi
 
   # CHECK CLEAN VAR
-  if [ "$CLEAN" == true ]; then
+  if [ "$CLEAN" == "true" ]; then
     make clean || tgsay "ERROR: Cleaning out/ terminated prematurely."
     if [ "$TYPE" == "ROM" ]; then
       make clobber || tgsay "ERROR: Cleaning out/ terminated prematurely."
@@ -192,27 +192,27 @@ case $var in
   ;;
   clean)
   CLEAN=true
-  messagetwo="Clean option provided! Making a clean build."
+  message2="Clean option provided! Making a clean build."
   ;;
   server)
   SERVER=true
-  messagefour="Server option provided! Using server as build machine."
+  message3="Server option provided! Using server as build machine."
   ;;
   noccache)
   NOCCACHE=true
-  messageseex="Noccache option provided! Excluding ccache for this build."
+  message4="Noccache option provided! Excluding ccache for this build."
   ;;
   poweroff)
   POWEROFF=true
-  messagefive="Poweroff option provided! Turning off laptop after work!"
+  message5="Poweroff option provided! Turning off laptop after work!"
   ;;
   takelogs)
   TAKELOGS=true
-  messagethree="Takelogs option provided! Running in logging mode."
+  message6="Takelogs option provided! Running in logging mode."
   ;;
   retryonfail)
   RETRYONFAIL=true
-  messageseven="Retryonfail option provided! Retrying when failing."
+  message7="Retryonfail option provided! Retrying when failing."
   ;;
   help)
   echo "Giovix92 CI Bot v$(echo $VERSION)"
@@ -275,15 +275,19 @@ else
 fi
 
 # Kernel check path
-kernelused
-if [ "$SERVER" == "true" ]; then
-  KERNELTYPEN=$(servercmd "$kernelusedcmd")
-  KERNELTYPE=$KERNELTYPEN
+if [ "$TYPE" == "ROM" ]; then
+  kernelused
+  if [ "$SERVER" == "true" ]; then
+    KERNELTYPEN=$(servercmd "$kernelusedcmd")
+    KERNELTYPE=$KERNELTYPEN
+  fi
+elif [ "$TYPE" == "RECOVERY" ]; then
+	KERNELTYPE="Prebuilt"
 fi
 
 tgsay "Giovix92 CI Bot v$(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE" "Kernel: $KERNELTYPE"
 if [ "$TAKELOGS" == "true" ]; then
-	tgsay "Takelogs option provided!" "Additional infos:" "$message" "$messagetwo" "$messagethree" "$messagefour" "$messagefive" "$messageseex" "$messageseven"
+	tgsay "Takelogs option provided!" "Additional infos:" "$message" "$message2" "$message3" "$message4" "$message7" "$message6" "$message5"
 fi
 
 if [ "$NOSYNC" == "false" ]; then

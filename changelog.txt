@@ -1,3 +1,9 @@
+2.3:
+Adjust kernelused function
+Changed messages vars names
+Fix clean func behaviour
+Some code adjustment
+
 2.2:
 Added retryonfail function
 Fixed mismatch on tgerr
