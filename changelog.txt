@@ -1,3 +1,6 @@
+2.4:
+Welcome SHRP!
+
 2.3:
 Adjust kernelused function
 Changed messages vars names

@@ -91,7 +91,7 @@ kernelused() {
   kernelusedcmd=". $WORKINGDIR/kernel/$VENDOR/$KERNELDIR/kernelver.sh"
   if [ "$SERVER" == "false" ]; then
 	cd kernel/$VENDOR/$KERNELDIR/arch/arm64/configs/
-    export $(grep "CONFIG_LOCALVERSION=" *-$DEVICE_defconfig | cut -d\   -f2)
+    export $(grep "CONFIG_LOCALVERSION=" *$DEVICE_defconfig | cut -d\   -f2)
     KERNELTYPE=$(echo $CONFIG_LOCALVERSION)
   fi
 }
@@ -165,6 +165,15 @@ case $var in
   VARIANT="eng"
   WORKNAME="omni"
   ANDROIDVER="3.3"
+  TYPE="RECOVERY"
+  var2="twrp"
+  ;;
+  shrp)
+  WORKINGDIR="/media/giovix92/HDD/shrp"
+  BUILDTYPE="SHRP"
+  VARIANT="eng"
+  WORKNAME="omni"
+  ANDROIDVER="2.1"
   TYPE="RECOVERY"
   var2="twrp"
   ;;
