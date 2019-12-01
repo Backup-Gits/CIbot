@@ -1,8 +1,12 @@
+2.5:
+Edited kernelused function
+Edited some paths
+
 2.4:
 Welcome SHRP!
 
 2.3:
-Adjust kernelused function
+Adjusted kernelused function
 Changed messages vars names
 Fix clean func behaviour
 Some code adjustment

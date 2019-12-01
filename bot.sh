@@ -13,7 +13,7 @@ TELEGRAM="/home/giovix92/CI/tg/telegram"
 IP=$SERVER_IP
 USERNAME=$SERVER_USERNAME
 PASSWORD=$SERVER_PASSWORD
-VERSION="2.3"
+VERSION="2.5"
 
 # SET VARIABLES TO FALSE
 NOSYNC="false"
@@ -87,15 +87,6 @@ checkserverlog() {
 	grep -Fiq "build completed" "logserver-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
 }
 
-kernelused() {
-  kernelusedcmd=". $WORKINGDIR/kernel/$VENDOR/$KERNELDIR/kernelver.sh"
-  if [ "$SERVER" == "false" ]; then
-	cd kernel/$VENDOR/$KERNELDIR/arch/arm64/configs/
-    export $(grep "CONFIG_LOCALVERSION=" *$DEVICE_defconfig | cut -d\   -f2)
-    KERNELTYPE=$(echo $CONFIG_LOCALVERSION)
-  fi
-}
-
 localbuild() {
   if [ "$NOCCACHE" == "false" ]; then
   $ccachevar
@@ -150,6 +141,7 @@ case $var in
   VENDOR="xiaomi"
   ARCH="arm64"
   var1="tissot"
+  KERNELUSED="perf+"
   ;;
   lavender)
   DEVICE="lavender"
@@ -158,6 +150,7 @@ case $var in
   KERNELDIR="lavender"
   ARCH="arm64"
   var1="lavender"
+  KERNELUSED="perf+"
   ;;
   twrp)
   WORKINGDIR="/media/giovix92/HDD/twrp"
@@ -167,15 +160,17 @@ case $var in
   ANDROIDVER="3.3"
   TYPE="RECOVERY"
   var2="twrp"
+  KERNELUSED="Prebuilt (perf+)"
   ;;
   shrp)
-  WORKINGDIR="/media/giovix92/HDD/shrp"
+  WORKINGDIR="/home/giovix92/shrp"
   BUILDTYPE="SHRP"
   VARIANT="eng"
   WORKNAME="omni"
   ANDROIDVER="2.1"
   TYPE="RECOVERY"
   var2="twrp"
+  KERNELUSED="Prebuilt (perf+)"
   ;;
   revenge10)
   WORKINGDIR="/media/giovix92/HDD/RevengeOS10"
@@ -283,18 +278,7 @@ else
   echo "Vars are set, continuing"
 fi
 
-# Kernel check path
-if [ "$TYPE" == "ROM" ]; then
-  kernelused
-  if [ "$SERVER" == "true" ]; then
-    KERNELTYPEN=$(servercmd "$kernelusedcmd")
-    KERNELTYPE=$KERNELTYPEN
-  fi
-elif [ "$TYPE" == "RECOVERY" ]; then
-	KERNELTYPE="Prebuilt"
-fi
-
-tgsay "Giovix92 CI Bot v$(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE" "Kernel: $KERNELTYPE"
+tgsay "Giovix92 CI Bot v$(echo $VERSION) started!" "$BUILDTYPE $ANDROIDVER build rolled at $date $starttime CEST!" "Device: $DEVICE, type: $TYPE" "Kernel: $KERNELUSED"
 if [ "$TAKELOGS" == "true" ]; then
 	tgsay "Takelogs option provided!" "Additional infos:" "$message" "$message2" "$message3" "$message4" "$message7" "$message6" "$message5"
 fi
