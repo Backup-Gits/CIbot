@@ -1,3 +1,19 @@
+3.2
+Almost fully code rewrite
+Split code in 3 different parts
+Welcome tulip!
+Added tgfinish function
+Edited syncing process
+Fixed serverbuild completion status
+Edited quiet behaviour
+Fixed errcount behaviour
+Fixed retryonfail behaviour
+Renamed takelogs to verbose
+Hardcoded CI_PATH
+Fixed local build behaviour by checking androidver
+Fixed server build behaviour by using /usr/bin/build on server machine
+
+[...]
 2.5:
 Edited kernelused function
 Edited some paths
