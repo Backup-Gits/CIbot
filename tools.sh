@@ -86,7 +86,7 @@ localbuild() {
   . build/envsetup.sh
 
   # CHECK FOR LOGS
-  if [ -f "$(PWD)/log*" ]; then
+  if [ -f "log*" ]; then
     rm log*
   fi
 
@@ -105,7 +105,11 @@ localbuild() {
     if [ "$ANDROIDVER" == "Q" ]; then
       brunch $DEVICE 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
     else
-      lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && mka bacon 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+      if [ "$WORKNAME" == "descendant" ]; then
+        lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && mka descendant | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+      else
+        lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && mka bacon 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+      fi
     fi
   else
     lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"

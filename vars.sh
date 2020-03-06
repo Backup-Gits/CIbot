@@ -13,7 +13,7 @@ TELEGRAM="/home/giovix92/CI/tg/telegram"
 IP=$SERVER_IP
 USERNAME=$SERVER_USERNAME
 PASSWORD=$SERVER_PASSWORD
-VERSION="3.2"
+VERSION="3.2.1"
 TELEGRAM_CHAT_USER=$CHAT_ID_USR
 
 # SET VARIABLES TO FALSE
@@ -95,6 +95,15 @@ case $var in
   ANDROIDVER="Pie"
   TYPE="ROM"
   var2="revenge9"
+  ;;
+  descendant)
+  WORKINGDIR="/run/media/giovix92/HDD/Descendant"
+  BUILDTYPE="Descendant"
+  VARIANT="userdebug"
+  WORKNAME="descendant"
+  ANDROIDVER="10"
+  TYPE="ROM"
+  var2="descendant"
   ;;
   nosync)
   NOSYNC=true
