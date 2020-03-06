@@ -54,7 +54,7 @@ tgfinish() {
 }
 
 syncsauce() {
-  repo sync --force-sync --force-remove-dirty -d -c -v --no-clone-bundle --no-tags || tgsay "ERROR: Syncing repo dir terminated prematurely."
+  repo sync --force-remove-dirty -d -c -v --no-clone-bundle --no-tags || tgsay "ERROR: Syncing repo dir terminated prematurely."
 }
 
 echoo() {
