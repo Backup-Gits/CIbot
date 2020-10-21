@@ -3,31 +3,48 @@
 #
 # Licensed under the Giovix92 License, Version 1.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You can find a copy here: 
+# You can find a copy here:
 # https://github.com/Giovix92/CIbot/blob/master/LICENSE
+VERSION="4.0"
 
-# SET MAIN VARIABLES
-TELEGRAM_TOKEN=$SECRET_TOKEN
-TELEGRAM_CHAT=$CHAT_ID
-TELEGRAM="/home/giovix92/CI/tg/telegram"
-IP=$SERVER_IP
-USERNAME=$SERVER_USERNAME
-PASSWORD=$SERVER_PASSWORD
-VERSION="3.2.2"
-TELEGRAM_CHAT_USER=$CHAT_ID_USR
+# Main variables must be set here!
+# Token of your Telegram bot:
+TELEGRAM_TOKEN=
+# Chat ID of your desired channel/group to post in:
+TELEGRAM_CHAT=
+# Your personal ID in order to allow your bot to send you pms (OPTIONAL):
+TELEGRAM_CHAT_USER=
+# Your server IP:
+IP=
+# Your server username:
+USERNAME=
+# Your server password:
+PASSWORD=
 
-# SET VARIABLES TO FALSE
-NOSYNC="false"
-CLEAN="false"
-VERBOSE="false"
-SERVER="false"
-NOCCACHE="false"
-POWEROFF="false"
-RETRYONFAIL="false"
-QUIET="false"
-errcount=0 
+# Build variables
+# Prevent syncing from your ROM's repo:
+NOSYNC=
+# Cleans out/ dir:
+CLEAN=
+# Advanced logging:
+VERBOSE=
+# Whether to use or not server for building:
+SERVER=
+# Prevent using ccache:
+NOCCACHE=
+# Power off of local machine after building:
+POWEROFF=
+# Retry building on fail, useful for metalava errors:
+RETRYONFAIL=
+# Disables most of the messages, including telegram ones:
+QUIET=
+# Jobs to use:
+jobs=
 
-# VARIABLES
+# Devices and roms
+# Here you can find some of the examples of device + ROM "inputs".
+# Feel free to add yours! Every AOSP is supported!
+# Note:
 for var in "$@"
 do
 case $var in
@@ -37,7 +54,6 @@ case $var in
   KERNELDIR="msm8953"
   VENDOR="xiaomi"
   ARCH="arm64"
-  var1="tissot"
   KERNELUSED="perf+"
   ;;
   lavender)
@@ -46,7 +62,6 @@ case $var in
   COMMONDIR="sdm660-common"
   KERNELDIR="lavender"
   ARCH="arm64"
-  var1="lavender"
   KERNELUSED="perf+"
   ;;
   tulip)
@@ -55,11 +70,18 @@ case $var in
   KERNELDIR="sdm660"
   COMMONDIR="sdm660-common"
   ARCH="arm64"
-  var1="tulip"
   KERNELUSED=
   ;;
+  cepheus)
+  DEVICE="cepheus"
+  VENDOR="xiaomi"
+  KERNELDIR="cepheus"
+  COMMONDIR=
+  ARCH="arm64"
+  KERNELUSED="Quantic Kernel"
+  ;;
   twrp)
-  WORKINGDIR="/run/media/giovix92/HDD/twrp"
+  WORKINGDIR=
   BUILDTYPE="TWRP"
   VARIANT="eng"
   WORKNAME="omni"
@@ -69,77 +91,64 @@ case $var in
   KERNELUSED="Prebuilt (perf+)"
   ;;
   shrp)
-  WORKINGDIR="/run/media/giovix92/HDD/shrp"
+  WORKINGDIR=
+  REMOTEDIR=
   BUILDTYPE="SHRP"
   VARIANT="eng"
   WORKNAME="omni"
-  ANDROIDVER="2.2"
+  ANDROIDVER="2.3"
   TYPE="RECOVERY"
+  MAKECMD="recoveryimage"
   var2="twrp"
   KERNELUSED="Prebuilt (perf+)"
   ;;
+  revenge11)
+  WORKINGDIR=
+  REMOTEDIR=
+  BUILDTYPE="RevengeOS"
+  VARIANT="userdebug"
+  WORKNAME="revengeos"
+  ANDROIDVER="R"
+  MAKECMD="bacon"
+  TYPE="ROM"
+  var2="revenge11"
+  ;;
   revenge10)
-  WORKINGDIR="/run/media/giovix92/HDD/RevengeOS10"
+  WORKINGDIR=
+  REMOTEDIR=
   BUILDTYPE="RevengeOS"
   VARIANT="userdebug"
   WORKNAME="revengeos"
   ANDROIDVER="Q"
+  MAKECMD="bacon"
   TYPE="ROM"
   var2="revenge10"
   ;;
   revenge9)
-  WORKINGDIR="/run/media/giovix92/HDD/RevengeOS9"
+  WORKINGDIR=
+  REMOTEDIR=
   BUILDTYPE="RevengeOS"
   VARIANT="userdebug"
   WORKNAME="revengeos"
-  ANDROIDVER="Pie"
+  ANDROIDVER="P"
+  MAKECMD="bacon"
   TYPE="ROM"
   var2="revenge9"
   ;;
   descendant)
-  WORKINGDIR="/run/media/giovix92/HDD/Descendant"
+  WORKINGDIR=
+  REMOTEDIR=
   BUILDTYPE="Descendant"
   VARIANT="userdebug"
   WORKNAME="descendant"
-  ANDROIDVER="10"
+  ANDROIDVER="Q"
+  MAKECMD="descendant"
   TYPE="ROM"
   var2="descendant"
   ;;
-  nosync)
-  NOSYNC=true
-  message="Nosync option added! Skipping syncing."
-  ;;
-  clean)
-  CLEAN=true
-  message2="Clean option provided! Making a clean build."
-  ;;
-  server)
-  SERVER=true
-  message3="Server option provided! Using server as build machine."
-  ;;
-  noccache)
-  NOCCACHE=true
-  message4="Noccache option provided! Excluding ccache for this build."
-  ;;
-  poweroff)
-  POWEROFF=true
-  message5="Poweroff option provided! Turning off laptop after work!"
-  ;;
-  verbose)
-  VERBOSE=true
-  message6="Verbose option provided! Running in logging mode."
-  ;;
-  retryonfail)
-  RETRYONFAIL=true
-  message7="Retryonfail option provided! Retrying when failing."
-  ;;
-  quiet)
-  QUIET=true
-  message8="Quiet option provided! Shh."
-  ;;
   help)
   echo "Giovix92 CI Bot v$(echo $VERSION)"
-  echo "Command usage: bot.sh device romtype [nosync] [clean] [verbose] [server] [poweroff] [noccache]"
+  echo "Command usage: bot.sh device romtype"
   echo "Goodbye!"
   exit
   ;;

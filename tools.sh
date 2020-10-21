@@ -3,11 +3,13 @@
 #
 # Licensed under the Giovix92 License, Version 1.0 (the "License");
 # you may not use this file except in compliance with the License.
-# You can find a copy here: 
+# You can find a copy here:
 # https://github.com/Giovix92/CIbot/blob/master/LICENSE
 
-export CI_PATH="/home/giovix92/CI"
+export CI_PATH=$(pwd)
+errcount=0
 
+# Source vars
 source $CI_PATH/vars.sh
 
 # FUNCTIONS
@@ -39,9 +41,7 @@ tgerr() {
 		fi
     poweroff
 	fi
-  if [ "$errcount" == "2" ] && [ "$RETRYONFAIL" == "true" ]; then
-    exit
-  elif [ "$RETRYONFAIL" == "false" ]; then
+  if [ "$errcount" == "2" ] && [ "$RETRYONFAIL" == "true" ] || [ "$RETRYONFAIL" == "false" ]; then
     exit
   fi
 }
@@ -54,7 +54,7 @@ tgfinish() {
 }
 
 syncsauce() {
-  repo sync --force-remove-dirty -d -c -v --no-clone-bundle --no-tags || tgsay "ERROR: Syncing repo dir terminated prematurely."
+  repo sync --force-remove-dirty -d -c -v --no-clone-bundle --no-tags || tgerr "ERROR: Syncing repo dir terminated prematurely."
 }
 
 echoo() {
@@ -79,55 +79,74 @@ isCompleted() {
   fi
 }
 
+buildf() {
+  if [ "$1" == "lunch" ]; then
+    lunch $(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT) 2>&1 | tee "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed!" "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+  elif [ "$1" == "source" ]; then
+    source build/envsetup.sh
+  elif [ "$1" == "build" ]; then
+    if [ "$ANDROIDVER" == "R" ] || [ "$ANDROIDVER" == "P" ]; then
+      # On P/R we still use mka
+      mka $(echo $MAKECMD) 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+    elif [ "$ANDROIDVER" == "Q" ]; then
+      # Q is "special" rofl
+      brunch $(eco $DEVICE) 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+    fi
+  elif [ "$1" == "clean" ]; then
+    make clean
+  fi
+}
+
 localbuild() {
+  # Check if we shall use ccache or not
   if [ "$NOCCACHE" == "false" ]; then
-  $ccachevar
+    $ccachevar
   fi
-  . build/envsetup.sh
 
-  # CHECK FOR LOGS
+  # Let's begin!
+  buildf source
+
+  # Check for leftover logs
   if [ -f "log*" ]; then
-    rm log*
+    rm -r log*.txt
   fi
 
-  # CHECK CLEAN VAR
+  # Clean if set
   if [ "$CLEAN" == "true" ]; then
-    make clean || tgsay "ERROR: Cleaning out/ terminated prematurely."
-    if [ "$TYPE" == "ROM" ]; then
-      make clobber || tgsay "ERROR: Cleaning out/ terminated prematurely."
+    if [ "$ANDROIDVER" == "R" ]; then
+      # We need to lunch on R before cleaning
+      buildf lunch
+      buildf clean || tgsay "ERROR: Cleaning out/ terminated prematurely."
+    else
+      # On P/Q just clean it all
+      buildf clean || tgsay "ERROR: Cleaning out/ terminated prematurely."
     fi
-    . build/envsetup.sh
+    # Re-source everything, just to be ok
+    buildf source
   fi
 
-  # LUNCH PART
-  lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" 2>&1 | tee "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER lunch failed!" "loglunch-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-  if [ "$TYPE" == "ROM" ]; then
-    if [ "$ANDROIDVER" == "Q" ]; then
-      brunch $DEVICE 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-    else
-      if [ "$WORKNAME" == "descendant" ]; then
-        lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && mka descendant | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-      else
-        lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && mka bacon 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
-      fi
-    fi
-  else
-    lunch "$(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT)" && make O=out recoveryimage 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt" || tgerr "ERROR: $BUILDTYPE $ANDROIDVER build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+  # Lunch everything
+  buildf lunch
+
+  # Build everything
+  buildf build
+
+  if isCompleted; then
     tgfinish
   fi
 }
 
 serverbuild() {
   if [ "$CLEAN" == "true" ]; then
-    servercmd "cd $(echo $WORKINGDIR) && make clean"
+    servercmd "cd $(echo $REMOTEDIR) && make clean"
   fi
   if [ "$NOSYNC" == "false" ]; then
-    servercmd "cd $(echo $WORKINGDIR) && repo sync -c -f --force-sync --no-tags --no-clone-bundle -j$(nproc --all) --optimized-fetch --prune"
+    servercmd "cd $(echo $REMOTEDIR) && repo sync -c -f --force-sync --no-tags --no-clone-bundle -j$(nproc --all) --optimized-fetch --prune"
   fi
-  servercmd "build $(echo $DEVICE)" 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
+  servercmd "cd $(echo $REMOTEDIR) && source build/envsetup.sh && lunch $(echo $WORKNAME)_$(echo $DEVICE)-$(echo $VARIANT) && mka $(echo $MAKECMD)" 2>&1 | tee "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   if isCompleted; then
     tgfinish
   else
     tgerr "ERROR: $BUILDTYPE $ANDROIDVER server build failed!" "logbuild-$BUILDTYPE-$ANDROIDVER-$date-$starttime.txt"
   fi
-} 
+}
