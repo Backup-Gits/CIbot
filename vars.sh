@@ -5,7 +5,7 @@
 # you may not use this file except in compliance with the License.
 # You can find a copy here:
 # https://github.com/Giovix92/CIbot/blob/master/LICENSE
-VERSION="4.0"
+VERSION="4.0.1"
 
 # Main variables must be set here!
 # Token of your Telegram bot:

@@ -12,6 +12,9 @@ errcount=0
 # Source vars
 source $CI_PATH/vars.sh
 
+# Export Telegram bin
+export TELEGRAM="${CI_PATH}/tg/telegram"
+
 # FUNCTIONS
 tgsay() {
   if [ "$QUIET" == "false" ]; then
